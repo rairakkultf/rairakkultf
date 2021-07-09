@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>茶园产量</title>
+    <link data-minify="1" rel="stylesheet" id="bootstrap-css" href="assets/plugins/bootstrap/css/bootstrap.css"
+          type="text/css" media="all">
+    <link rel="stylesheet" href="assets/plugins/arcgis_js_3.15/dijit/themes/tundra/tundra.css">
+    <link rel="stylesheet" href="assets/plugins/arcgis_js_3.15/esri/css/esri.css">
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<script src="assets/plugins/bootstrap/jquery-3.1.1.min.js"></script>
+<script src="assets/plugins/bootstrap/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+<script src="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.js"></script>
+<script src="assets/plugins/common/echarts.min.js"></script>
+<script src="assets/plugins/arcgis_js_3.15/init.js"></script>
+
+<nav class="navbar navbar-default navbar-static-top bg-main" style="height: 60px">
+    <div class="container">
+        <div class="row">
+            <!-- logo与平台名 -->
+            <div class="navbar-header">
+                <a class="navbar-brand brand" href="index.html">
+                    <div class="col-md-5">
+                        <img src="assets/gizmos/icon.png" class="img-rounded logo-top" width="50" height="50">
+                    </div>
+                    <div class="col-md-7">
+                        <p style="color: #fff; margin-top: -15px">茶耘系统</p>
+                    </div>
+                </a>
+            </div>
+            <!-- 路径导航 -->
+            <div class="col-md-5 column">
+                <ol class="breadcrumb bg-main nav-top">
+                    <li class="active" style="color: #fff">首页</li>
+                </ol>
+            </div>
+            <!-- 下拉菜单 -->
+            <div class="col-md-4 column">
+                <div class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li class="--resources dropdown-gap menu-item menu-item-type-custom menu-item-object-custom">
+                            <a style="color: #fff">作物产量</a>
+                            <div class="sub-menu --resources" style="width: 120px">
+                                <ul class="MenuItems">
+                                    <li class="MenuItems-item">
+                                        <a href="crop_tea.html">茶园</a>
+                                    </li>
+                                    <li class="MenuItems-item">
+                                        <a href="crop_orange.html">柑橘</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li class="--resources dropdown-gap menu-item menu-item-type-custom menu-item-object-custom">
+                            <a style="color: #fff">茶叶采摘期</a>
+                            <div class="sub-menu --resources">
+                                <ul class="MenuItems">
+                                    <li class="MenuItems-item">
+                                        <a href="#">白叶一号</a>
+                                    </li>
+                                    <li class="MenuItems-item">
+                                        <a href="#">龙井43</a>
+                                    </li>
+                                    <li class="MenuItems-item">
+                                        <a href="pick_wuniuzao.html">乌牛早</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li class="--resources dropdown-gap menu-item menu-item-type-custom menu-item-object-custom">
+                            <a style="color: #fff" href="weather.html">天气指标</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+<p>茶耘系统</p>
+<div class="mainDiv h-box">
+    <div id="map"></div>
+    <!-- 表格初始化 -->
+    <div id="chartsDiv" class="v-box">
+        <div id="chart_chanliang" style="width:100%;height:48vh;"></div>
+        <div id="chart_mianji" style="width:100%;height:48vh;"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var map = null;
+    InitTDTMap();
+    setEcharts("杭州市");
+
+    function InitTDTMap() {
+        require([
+                "esri/map",
+                "esri/layers/GraphicsLayer",
+                "esri/layers/ArcGISDynamicMapServiceLayer",
+                "esri/layers/WebTiledLayer",
+                "esri/layers/WMTSLayer",
+                "esri/layers/WMTSLayerInfo",
+                "esri/layers/TileInfo",
+                "esri/layers/TiledMapServiceLayer",
+                "esri/geometry/Extent",
+                "esri/SpatialReference"
+            ],
+            function (Map, GraphicsLayer, ArcGISDynamicMapServiceLayer,Extent) {
+                map = new Map("map", {
+                    zoom: 4,
+                });
+                var extent = new esri.geometry.Extent({
+                    "xmin":115,"ymin":24,"xmax":125,"ymax":35,
+                    "spatialReference":{"wkid":4490}
+                });
+
+                var tileInfo = new esri.layers.TileInfo({
+                    "rows": 256,
+                    "cols": 256,
+                    "compressionQuality": 0,
+                    "origin": {
+                        "x": -180,
+                        "y": 90
+                    },
+                    "spatialReference": {
+                        "wkid": 4490
+                    },
+                    "lods": [
+                        {
+                            "level": 2,
+                            "resolution": 0.3515625,
+                            "scale": 147748796.52937502
+                        },
+
+                        {
+                            "level": 3,
+                            "resolution": 0.17578125,
+                            "scale": 73874398.264687508
+                        },
+
+                        {
+                            "level": 4,
+                            "resolution": 0.087890625,
+                            "scale": 36937199.132343754
+                        },
+
+                        {
+                            "level": 5,
+                            "resolution": 0.0439453125,
+                            "scale": 18468599.566171877
+                        },
+
+                        {
+                            "level": 6,
+                            "resolution": 0.02197265625,
+                            "scale": 9234299.7830859385
+                        },
+
+                        {
+                            "level": 7,
+                            "resolution": 0.010986328125,
+                            "scale": 4617149.8915429693
+                        },
+
+                        {
+                            "level": 8,
+                            "resolution": 0.0054931640625,
+                            "scale": 2308574.9457714846
+                        },
+
+                        {
+                            "level": 9,
+                            "resolution": 0.00274658203125,
+                            "scale": 1154287.4728857423
+                        },
+
+                        {
+                            "level": 10,
+                            "resolution": 0.001373291015625,
+                            "scale": 577143.73644287116
+                        },
+
+                        {
+                            "level": 11,
+                            "resolution": 0.0006866455078125,
+                            "scale": 288571.86822143558
+                        },
+
+                        {
+                            "level": 12,
+                            "resolution": 0.00034332275390625,
+                            "scale": 144285.93411071779
+                        },
+
+                        {
+                            "level": 13,
+                            "resolution": 0.000171661376953125,
+                            "scale": 72142.967055358895
+                        },
+
+                        {
+                            "level": 14,
+                            "resolution": 8.58306884765625e-005,
+                            "scale": 36071.483527679447
+                        },
+
+                        {
+                            "level": 15,
+                            "resolution": 4.291534423828125e-005,
+                            "scale": 18035.741763839724
+                        },
+
+                        {
+                            "level": 16,
+                            "resolution": 2.1457672119140625e-005,
+                            "scale": 9017.8708819198619
+                        },
+
+                        {
+                            "level": 17,
+                            "resolution": 1.0728836059570313e-005,
+                            "scale": 4508.9354409599309
+                        },
+
+                        {
+                            "level": 18,
+                            "resolution": 5.3644180297851563e-006,
+                            "scale": 2254.4677204799655
+                        }
+                    ]
+                });
+                var baseMap1 = new esri.layers.WebTiledLayer("http://{subDomain}.tianditu.com/DataServer?T=img_c&X={col}&Y={row}&L={level}&tk=54d2dc76b5631d48c2a37de8eff7ead0", {
+                    "copyright": "Tianditu",
+                    "id": "Tianditu1",
+                    "subDomains": ["t0", "t1", "t2"],
+                    "tileInfo": tileInfo
+                });
+                map.addLayer(baseMap1);
+                var baseMapMarker = new esri.layers.WebTiledLayer("http://{subDomain}.tianditu.com/DataServer?T=cva_c&X={col}&Y={row}&L={level}&tk=54d2dc76b5631d48c2a37de8eff7ead0", {
+                    "copyright": "Tianditu",
+                    "id": "Tianditu2",
+                    "subDomains": ["t0", "t1", "t2"],
+                    "tileInfo": tileInfo
+                });
+                map.addLayer(baseMapMarker);
+
+                var strUrl = "http://localhost:6080/arcgis/rest/services/city_transparent/MapServer";
+                var dx2 = new ArcGISDynamicMapServiceLayer(strUrl);//生成地图图层
+                dx2.id = "city";
+                map.addLayer(dx2);
+
+                var layer = new GraphicsLayer({"id": "citylayer"});
+                map.addLayer(layer);
+
+                var layerMouseOver = new GraphicsLayer({"id": "mouseOverLayer"});//鼠标浮动事件
+                map.addLayer(layerMouseOver);
+
+                var layerCick = new GraphicsLayer({"id": "clikcLayer"});//鼠标点击事件
+                map.addLayer(layerCick);
+                map.setExtent(extent);
+
+                require(["esri/tasks/query",
+                        "esri/tasks/QueryTask",
+                        "esri/graphic",
+                        "esri/symbols/SimpleLineSymbol",
+                        "esri/symbols/SimpleFillSymbol",
+                        "esri/Color"
+                    ],
+                    function (Query, QueryTask, Graphic, SimpleLineSymbol, SimpleFillSymbol, Color) {
+                        var gxLayer = map.getLayer("city");
+                        var queryTask = new QueryTask(gxLayer.url + "/0");
+                        var query = new Query();
+                        query.where = "1=1";
+                        query.outFields = ['*'];
+                        query.returnGeometry = true;
+                        queryTask.execute(query, function (results) {
+                            if (results.features.length === 0) {
+                                return;
+                            }
+
+                            results.features.forEach(function (oneData) {
+                                var symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([82, 132, 255, 0]), 2), new Color([0, 0, 0, 0]));
+                                var graphic = new Graphic(oneData.geometry, symbol, oneData.attributes);
+                                layer.add(graphic);
+                            });
+                            //鼠标浮动事件
+                            layer.on("mouse-over", function (evt) {
+                                layerMouseOver.clear();
+                                var symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([255, 0, 0]), 2), new Color([255, 0, 0, 0.3]));
+                                var graphic = new Graphic(evt.graphic.geometry, symbol, evt.graphic.attributes);
+                                layerMouseOver.add(graphic);
+                            });
+                            //鼠标点击事件
+                            layerMouseOver.on("click", function (evt) {
+                                layerCick.clear();
+                                var symbol = new SimpleFillSymbol(SimpleFillSymbol.STYLE_SOLID, new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([0, 255, 0]), 2), new Color([255, 0, 0, 0.3]));
+                                var graphic = new Graphic(evt.graphic.geometry, symbol, evt.graphic.attributes);
+                                layerCick.add(graphic);
+
+                                var name = evt.graphic.attributes.district;
+                                setEcharts(name);
+                            });
+                        });
+                    });
+            }
+        );
+    }
+    //更新图表
+    function setEcharts(name) {
+        var xData_crop=[];
+        var yData_crop=[];
+        var myChart_crop = echarts.init(document.getElementById('chart_chanliang'));
+        var flag_crop=0;
+
+        var xData_area=[];
+        var yData_area=[];
+        var myChart_area = echarts.init(document.getElementById('chart_mianji'));
+        var flag_area=0;
+
+        myChart_crop.setOption({
+            title: {
+                text: name + '作物产量'
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross',
+                    label: {
+                        backgroundColor: '#6a7985'
+                    }
+                }
+            },
+            toolbox: {
+                feature: {
+
+                    myfresh:{
+                        show:true,
+                        title:'县/市数据切换',
+                        icon: 'path://M990.55 380.08 q11.69 0 19.88 8.19 q7.02 7.01 7.02 18.71 l0 480.65 q-1.17 43.27 -29.83 71.93 q-28.65 28.65 -71.92 29.82 l-813.96 0 q-43.27 -1.17 -72.5 -30.41 q-28.07 -28.07 -29.24 -71.34 l0 -785.89 q1.17 -43.27 29.24 -72.5 q29.23 -29.24 72.5 -29.24 l522.76 0 q11.7 0 18.71 7.02 q8.19 8.18 8.19 18.71 q0 11.69 -7.6 19.29 q-7.6 7.61 -19.3 7.61 l-518.08 0 q-22.22 1.17 -37.42 16.37 q-15.2 15.2 -15.2 37.42 l0 775.37 q0 23.39 15.2 38.59 q15.2 15.2 37.42 15.2 l804.6 0 q22.22 0 37.43 -15.2 q15.2 -15.2 16.37 -38.59 l0 -474.81 q0 -11.7 7.02 -18.71 q8.18 -8.19 18.71 -8.19 l0 0 ZM493.52 723.91 l-170.74 -170.75 l509.89 -509.89 q23.39 -23.39 56.13 -21.05 q32.75 1.17 59.65 26.9 l47.94 47.95 q25.73 26.89 27.49 59.64 q1.75 32.75 -21.64 57.3 l-508.72 509.9 l0 0 ZM870.09 80.69 l-56.13 56.14 l94.72 95.9 l56.14 -57.31 q8.19 -9.35 8.19 -21.05 q-1.17 -12.86 -10.53 -22.22 l-47.95 -49.12 q-10.52 -9.35 -23.39 -9.35 q-11.69 -1.17 -21.05 7.01 l0 0 ZM867.75 272.49 l-93.56 -95.9 l-380.08 380.08 l94.73 94.73 l378.91 -378.91 l0 0 ZM322.78 553.16 l38.59 39.77 l-33.92 125.13 l125.14 -33.92 l38.59 38.6 l-191.79 52.62 q-5.85 1.17 -12.28 0 q-6.44 -1.17 -11.11 -5.84 q-4.68 -4.68 -5.85 -11.7 q-2.34 -5.85 0 -11.69 l52.63 -192.97 l0 0 Z',
+                        onload:getdisdata_crop(),
+                        onclick:function () {
+                            if(flag_crop===0){
+                                flag_crop=1;
+                                xData_crop=[];
+                                yData_crop=[];
+                                getprovince_crop();
+                            }
+                            else{
+                                flag_crop=0;
+                                xData_crop=[];
+                                yData_crop=[];
+                                getdisdata_crop();
+                            }
+                        },
+                    },
+                    saveAsImage: {}
+                },
+            },
+            xAxis: {
+                data: []
+            },
+            yAxis: [
+                {
+                    type: 'value'
+                }
+            ],
+            series: [{
+                type: 'line',
+                data: []
+            }]
+        });
+        function getdisdata_crop(){
+            $.get("./json/crop_tea.json").done(function (result) {
+                var len=result.length;
+                for(var i=0;i<len;i++){
+                    if(result[i]['district']===name){
+                        for(var j=2011;j<2019;j++){
+                            yData_crop.push(result[i]['year_'+j]);
+                            xData_crop.push(j);
+                        }
+                    }
+                }
+                var option ={
+                    title: {
+                        text: name + '作物产量'
+                    },
+                    xAxis: {
+                        data:xData_crop,
+                    },
+                    series:{
+                        data:yData_crop,
+                    }
+                };
+                myChart_crop.setOption(option);
+            });
+        }
+        function getprovince_crop(){
+            $.get("./json/crop_tea.json").done(function (result) {
+                var len=result.length;
+                var urban;
+                for(var i=0;i<len;i++){
+                    if(result[i]['district']===name){
+                        urban=result[i]['urban'];
+                        break;
+                    }
+                }
+                for(var i=0;i<len;i++){
+                    if(result[i]['urban']===urban&&result[i]['district']===urban){
+                        for(var j=2011;j<2019;j++){
+                            yData_crop.push(result[i]['year_'+j]);
+                            xData_crop.push(j);
+                        }
+                    }
+                }
+                var option ={
+                    title: {
+                        text: urban + '作物产量'
+                    },
+                    xAxis: {
+                        data:xData_crop,
+                    },
+                    series:{
+                        data:yData_crop,
+                    }
+                };
+                myChart_crop.setOption(option);
+            });
+        }
+
+        myChart_area.setOption({
+            title: {
+                text: name + '茶园面积'
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross',
+                    label: {
+                        backgroundColor: '#6a7985'
+                    }
+                }
+            },
+            toolbox: {
+                feature: {
+
+                    myfresh:{
+                        show:true,
+                        title:'县/市数据切换',
+                        icon: 'path://M990.55 380.08 q11.69 0 19.88 8.19 q7.02 7.01 7.02 18.71 l0 480.65 q-1.17 43.27 -29.83 71.93 q-28.65 28.65 -71.92 29.82 l-813.96 0 q-43.27 -1.17 -72.5 -30.41 q-28.07 -28.07 -29.24 -71.34 l0 -785.89 q1.17 -43.27 29.24 -72.5 q29.23 -29.24 72.5 -29.24 l522.76 0 q11.7 0 18.71 7.02 q8.19 8.18 8.19 18.71 q0 11.69 -7.6 19.29 q-7.6 7.61 -19.3 7.61 l-518.08 0 q-22.22 1.17 -37.42 16.37 q-15.2 15.2 -15.2 37.42 l0 775.37 q0 23.39 15.2 38.59 q15.2 15.2 37.42 15.2 l804.6 0 q22.22 0 37.43 -15.2 q15.2 -15.2 16.37 -38.59 l0 -474.81 q0 -11.7 7.02 -18.71 q8.18 -8.19 18.71 -8.19 l0 0 ZM493.52 723.91 l-170.74 -170.75 l509.89 -509.89 q23.39 -23.39 56.13 -21.05 q32.75 1.17 59.65 26.9 l47.94 47.95 q25.73 26.89 27.49 59.64 q1.75 32.75 -21.64 57.3 l-508.72 509.9 l0 0 ZM870.09 80.69 l-56.13 56.14 l94.72 95.9 l56.14 -57.31 q8.19 -9.35 8.19 -21.05 q-1.17 -12.86 -10.53 -22.22 l-47.95 -49.12 q-10.52 -9.35 -23.39 -9.35 q-11.69 -1.17 -21.05 7.01 l0 0 ZM867.75 272.49 l-93.56 -95.9 l-380.08 380.08 l94.73 94.73 l378.91 -378.91 l0 0 ZM322.78 553.16 l38.59 39.77 l-33.92 125.13 l125.14 -33.92 l38.59 38.6 l-191.79 52.62 q-5.85 1.17 -12.28 0 q-6.44 -1.17 -11.11 -5.84 q-4.68 -4.68 -5.85 -11.7 q-2.34 -5.85 0 -11.69 l52.63 -192.97 l0 0 Z',
+                        onload:getdisdata_area(),
+                        onclick:function () {
+                            if(flag_area===0){
+                                flag_area=1;
+                                xData_area=[];
+                                yData_area=[];
+                                getprovince_area();
+                            }
+                            else{
+                                flag_area=0;
+                                xData_area=[];
+                                yData_area=[];
+                                getdisdata_area();
+                            }
+                        },
+                    },
+                    saveAsImage: {}
+                },
+            },
+            xAxis: {
+                data: []
+            },
+            yAxis: [
+                {
+                    type: 'value'
+                }
+            ],
+            series: [{
+                type: 'line',
+                data: []
+            }]
+        });
+        function getdisdata_area(){
+            $.get("./json/area_tea.json").done(function (result) {
+                var len=result.length;
+                for(var i=0;i<len;i++){
+                    if(result[i]['district']===name){
+                        for(var j=2011;j<2019;j++){
+                            yData_area.push(result[i]['year_'+j]);
+                            xData_area.push(j);
+                        }
+                    }
+                }
+                var option ={
+                    title: {
+                        text: name + '茶园面积'
+                    },
+                    xAxis: {
+                        data:xData_area,
+                    },
+                    series:{
+                        data:yData_area,
+                    }
+                };
+                myChart_area.setOption(option);
+            });
+        }
+        function getprovince_area(){
+            $.get("./json/area_tea.json").done(function (result) {
+                var len=result.length;
+                var urban;
+                for(var i=0;i<len;i++){
+                    if(result[i]['district']===name){
+                        urban=result[i]['urban'];
+                        break;
+                    }
+                }
+                for(var i=0;i<len;i++){
+                    if(result[i]['urban']===urban&&result[i]['district']===urban){
+                        for(var j=2011;j<2019;j++){
+                            yData_area.push(result[i]['year_'+j]);
+                            xData_area.push(j);
+                        }
+                    }
+                }
+                var option ={
+                    title: {
+                        text: urban + '茶园面积'
+                    },
+                    xAxis: {
+                        data:xData_area,
+                    },
+                    series:{
+                        data:yData_area,
+                    }
+                };
+                myChart_area.setOption(option);
+            });
+        }
+    }
+</script>
+
+</body>
+</html>
